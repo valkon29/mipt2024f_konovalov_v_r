@@ -1,0 +1,13 @@
+filename,file_size,file_attributes,region_count,region_id,region_shape_attributes,region_attributes
+photo_2024-10-15_00-09-26.jpg,192159,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[268,412,398,255],""all_points_y"":[814,798,654,669]}","{""type"":""qr""}"
+photo_2024-10-15_00-09-22.jpg,159910,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[428,684,693,413],""all_points_y"":[836,847,584,573]}","{""type"":""qr""}"
+photo_2024-10-15_00-09-17.jpg,171558,"{}",2,0,"{""name"":""polygon"",""all_points_x"":[301,575,566,292],""all_points_y"":[768,760,485,492]}","{""type"":""qr""}"
+photo_2024-10-15_00-09-17.jpg,171558,"{}",2,1,"{""name"":""polygon"",""all_points_x"":[296,821,809,292],""all_points_y"":[1092,1076,806,823]}","{""type"":""bar""}"
+photo_2024-10-15_00-09-13.jpg,203069,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[338,640,650,344],""all_points_y"":[950,990,910,876]}","{""type"":""bar""}"
+photo_2024-10-15_00-09-09.jpg,220416,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[559,477,409,486],""all_points_y"":[944,670,684,966]}","{""type"":""bar""}"
+photo_2024-10-15_00-09-01.jpg,236687,"{}",2,0,"{""name"":""polygon"",""all_points_x"":[175,541,521,160],""all_points_y"":[1055,972,883,964]}","{""type"":""bar""}"
+photo_2024-10-15_00-09-01.jpg,236687,"{}",2,1,"{""name"":""polygon"",""all_points_x"":[393,693,680,387],""all_points_y"":[421,406,344,359]}","{""type"":""bar""}"
+photo_2024-10-15_00-08-57.jpg,165882,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[270,652,653,270],""all_points_y"":[867,887,794,776]}","{""type"":""bar""}"
+photo_2024-10-15_00-08-53.jpg,218622,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[274,548,542,271],""all_points_y"":[881,867,806,818]}","{""type"":""bar""}"
+photo_2024-10-15_00-08-48.jpg,185923,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[290,636,548,206],""all_points_y"":[732,455,345,624]}","{""type"":""bar""}"
+photo_2024-10-15_00-21-30.jpg,157371,"{}",1,0,"{""name"":""polygon"",""all_points_x"":[303,645,646,307],""all_points_y"":[805,815,682,677]}","{""type"":""bar""}"
