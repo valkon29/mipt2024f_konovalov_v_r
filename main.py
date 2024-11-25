@@ -57,11 +57,27 @@ def get_regions(initial_regions, keypoints, labels):
 
     return regions
 
-def augment(image_path, full_data, output_folder, transform):
+
+def augment(image_path, full_data, output_folder):
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_name = image_path.split('/')[-1].split('.')[0]
-    
+
+    crop_x = random.uniform(0.4, 1)
+    crop_y = random.uniform(0.4, 1)
+
+    transform = A.Compose([
+        # A.ChromaticAberration(p=1, primary_distortion_limit=(0, 0.1), secondary_distortion_limit=(0, 0.1)),
+        # A.ISONoise(p=1, color_shift=(0.5, 1), intensity=(0.3, 0.7)),
+        # A.Perspective(p=1, scale=(0.05, 0.3)),
+        # A.Rotate(p=1, limit=180, crop_border=True),
+        # A.Defocus(p=1, radius=(3, 3)),
+        # A.GaussNoise(p=1, var_limit=(100, 250))
+        # A.RandomCrop(int(image.shape[0] * crop_x), int(image.shape[1] * crop_y), p=1)
+        # A.GaussianBlur(p=1, blur_limit=(5, 11)),
+        A.MotionBlur(blur_limit=(11, 21), p=1)
+    ], keypoint_params=A.KeypointParams(format='xy', label_fields=['class_labels']))
+
     for full_name, file_data_ in full_data['_via_img_metadata'].items():
         file_data = dict(file_data_)
         if image_name in full_name:
@@ -107,14 +123,7 @@ def main(image_folder_path, markup_path, replication_factor):
         markup_data = json.load(f)
 
     if not os.path.exists(output_folder):
-        os.makedirs(output_folder)    
-
-    transform = A.Compose([
-        A.ISONoise(p=0.5, color_shift=(1, 1), intensity=(0.5, 0.5)),
-        A.Perspective(p=0.5, scale=(0.5, 0.5)),
-        A.Defocus(p=1, radius=(3, 3)),
-        
-    ], keypoint_params=A.KeypointParams(format='xy', label_fields=['class_labels']))
+        os.makedirs(output_folder)
 
     augmented_image_markups_list = []
 
@@ -122,7 +131,7 @@ def main(image_folder_path, markup_path, replication_factor):
         path_to_image = "/".join([image_folder_path, image_name])
 
         for _ in range(int(replication_factor)):
-            augmented_image_markup = augment(path_to_image, markup_data, output_folder, transform)
+            augmented_image_markup = augment(path_to_image, markup_data, output_folder)
             augmented_image_markups_list.append(augmented_image_markup)
 
     write_results(markup_data, augmented_image_markups_list, 'augmented_markup.json')
