@@ -27,29 +27,67 @@ python3 main.py images via_project_9Nov2024_20h28m_.json 2
 
 Сама операция искажения, применяемая к входным изображениям, захардкожена внутри файла _main.py_. В будущем планируется в какой-то степени перенести список искажений и их параметров в какой-нибудь конфиг.
 
-## Искажения
+## Проективное искажение
+
+Для исследования этих искажений на данном этапе были взяты синтетические изображения. Они деформировались в результате проективного преобразования, а затем путём обратного преобразования приводились к исходному прямоугольному виду.
+
+В качестве меры деформированности бралась сумма отклонений углов от 90 градусов, так как синтетические штрих-коды исходно прямоугольные. Но ниже значения углов представлены в радианах. За метрику близости между исходным кодом и изображением, полученным в результате обратного преобразования, была взята L2-норма разницы в grayscale (только по области штрих-кода).
+
+Соответственнно процедура искажения многократно запускалась на одном изображении, считалась мера искажения и близость итогового изображения к исходному.
+
+На qr-коде:
+
+<div class='container'>
+    <img src="visualizations/qr_stats.png" alt="drawing" width="400"/>
+</div>
+
+Пример сильного искажения:
+
+<div class='container'>
+    <img src="visualizations/qr1.png" alt="drawing" width="200"/>
+    <img src="visualizations/qr1_def.png" alt="drawing" width="200"/>
+    <img src="visualizations/qr1_rev.png" alt="drawing" width="200"/>
+</div>
+
+На штрих-коде:
+
+<div class='container'>
+    <img src="visualizations/stat4.png" alt="drawing" width="400"/>
+</div>
+
+Пример сильного искажения:
+
+<div class='container'>
+    <img src="visualizations/4.jpeg" alt="drawing" width="200"/>
+    <img src="visualizations/def4.png" alt="drawing" width="200"/>
+    <img src="visualizations/rev4.png" alt="drawing" width="200"/>
+</div>
+
+На штрих-коде попроще:
+
+<div class='container'>
+    <img src="visualizations/stats1.png" alt="drawing" width="400"/>
+</div>
+
+Пример сильного искажения:
+
+<div class='container'>
+    <img src="visualizations/1.png" alt="drawing" width="200"/>
+    <img src="visualizations/def1.png" alt="drawing" width="200"/>
+    <img src="visualizations/rev1.png" alt="drawing" width="200"/>
+</div>
+
+Исходя из полученных данных можно сделать вывод, что неадекватные деформации начинаются примерно с 2.0 радиан.
+
+## Искажения из albumentations
 
 Все искажения изображений осуществляются посредством библиотеки [albumentations](https://albumentations.ai/docs/). Она поддерживает работу с ключевыми точками, масками и bounding_box-ами, поэтому пока что её функционала вполне достаточно. Вот пример нескольких искажений, с визуализацией разметки, которые кажутся наиболее актуальными, и которые были опробованы на практике.
 
-- __RandomCrop__: кадрирование изображение случайным образом
-
-<div class='container'>
-    <img src="visualizations/crop_input.png" alt="drawing" width="300"/>
-    <img src="visualizations/crop_output.png" alt="drawing" width="300"/>
-</div>
-
-- __Rotate__: поворот на угол от 0 до 360 градусов;
+- __Rotate__: поворот на угол от 0 до 360 градусов
 
 <div class='container'>
     <img src="visualizations/rotate_input.png" alt="drawing" width="300"/>
     <img src="visualizations/rotate_output.png" alt="drawing" width="300"/>
-</div>
-
-- __Perspective__: углы изображения смещаются на случайные расстояния в заданных пределах, изображение деформируется соотвествующим образом
-
-<div class='container'>
-    <img src="visualizations/perspective_input.png" alt="drawing" width="300"/>
-    <img src="visualizations/perspective_output.png" alt="drawing" width="300"/>
 </div>
 
 - __ISONoise__: симуляция шума, возникающего при высоких значениях ISO
@@ -66,27 +104,12 @@ python3 main.py images via_project_9Nov2024_20h28m_.json 2
     <img src="visualizations/gauss_noise_output.png" alt="drawing" width="300"/>
 </div>
 
-- __ChromaticAberration__: симуляция хроматических аббераций изображения
-
-<div class='container'>
-    <img src="visualizations/chromatic_input.png" alt="drawing" width="300"/>
-    <img src="visualizations/chromatic_output.png" alt="drawing" width="300"/>
-</div>
-
 - __GaussianBlur__: свёртка с гауссовским ядром
 
 <div class='container'>
     <img src="visualizations/gauss_blur_input.png" alt="drawing" width="300"/>
     <img src="visualizations/gauss_blur_output.png" alt="drawing" width="300"/>
 </div>
-
-- __MotionBlur__: свёртка с продольным ядром, направление "движения" при этом выбирается случайно
-
-<div class='container'>
-    <img src="visualizations/motion_input.png" alt="drawing" width="300"/>
-    <img src="visualizations/motion_output.png" alt="drawing" width="300"/>
-</div>
-
 
 Кроме того, была создана [таблица](https://docs.google.com/spreadsheets/d/1PcWqvZCe95tcm1lzSWeyEqdJK_wRV9SHoov22B2F4M4/edit?gid=0#gid=0) со всеми искажениями, которые потенциально нам могут пригодиться.
 В столбцах присутствуют оценка релевантности отдельных искажений для нашей задачи по 10-бальной шкале, а также местами их краткое описание и допустимые границы параметров. _По многим из них пока есть сомнения, таблица заполнена не полностью_.
