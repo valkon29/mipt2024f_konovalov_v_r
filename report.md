@@ -15,6 +15,10 @@
 - набор изображений, полученных из входных путём некоторых искажений
 - разметка в том же формате, что и на входе
 
+## Данные
+
+Помимо работы над аугментатором мной были сделаны и размечены размечены __150__ фотографий штрихкодов. Их можно найти в вышеупомянутом репозитории в папке _images_. Формат разметки можно подробно изучить в этом репозитори: [github.com/CD7567/mipt2024f-4-common-knowledge](https://github.com/CD7567/mipt2024f-4-common-knowledge/blob/master/annotation/annotation.md). Она учитывает ориентацию кода, его тип и валидность.
+
 ## API
 
 Исполняемый файл _main.py_, ему на вход подаются путь к папке с изображениями, путь к файлу и число, задающее кол-во изображений, которое необходимо получить из каждого исходного посредством аугментации:
@@ -29,55 +33,55 @@ python3 main.py images via_project_9Nov2024_20h28m_.json 2
 
 ## Проективное искажение
 
-Для исследования этих искажений на данном этапе были взяты синтетические изображения. Они деформировались в результате проективного преобразования, а затем путём обратного преобразования приводились к исходному прямоугольному виду.
+Для исследования этих искажений на данном этапе были взяты синтетические изображения qr-кодов. Они деформировались в результате проективного преобразования, а затем путём обратного преобразования приводились к исходному прямоугольному виду.
 
-В качестве меры деформированности бралась сумма отклонений углов от 90 градусов, так как синтетические штрих-коды исходно прямоугольные. Но ниже значения углов представлены в радианах. За метрику близости между исходным кодом и изображением, полученным в результате обратного преобразования, была взята L2-норма разницы в grayscale (только по области штрих-кода).
+В качестве меры деформированности бралась минимальная площадь барселя в углу изображения после искажения. Чем она меньше, тем мильнее искажение. За метрику близости между исходным кодом и изображением, полученным в результате обратного преобразования, была взята L1-норма разницы в grayscale (только по области бар-кода).
 
 Соответственнно процедура искажения многократно запускалась на одном изображении, считалась мера искажения и близость итогового изображения к исходному.
 
-На qr-коде:
+На qr-коде низкого разрешения:
 
 <div class='container'>
-    <img src="visualizations/qr_stats.png" alt="drawing" width="400"/>
+    <img src="visualizations/small_stats.png" alt="drawing" width="600"/>
 </div>
 
 Пример сильного искажения:
 
 <div class='container'>
-    <img src="visualizations/qr1.png" alt="drawing" width="200"/>
-    <img src="visualizations/qr1_def.png" alt="drawing" width="200"/>
-    <img src="visualizations/qr1_rev.png" alt="drawing" width="200"/>
+    <img src="synthetics/qr1_small.png" alt="drawing" width="200"/>
+    <img src="visualizations/small_dst.png" alt="drawing" width="200"/>
+    <img src="visualizations/small_rev.png" alt="drawing" width="200"/>
 </div>
 
-На штрих-коде:
+На qr-коде среднего разрешения:
 
 <div class='container'>
-    <img src="visualizations/stat4.png" alt="drawing" width="400"/>
+    <img src="visualizations/med_stats.png" alt="drawing" width="600"/>
 </div>
 
 Пример сильного искажения:
 
 <div class='container'>
-    <img src="visualizations/4.jpeg" alt="drawing" width="200"/>
-    <img src="visualizations/def4.png" alt="drawing" width="200"/>
-    <img src="visualizations/rev4.png" alt="drawing" width="200"/>
+    <img src="synthetics/qr1_medium.png" alt="drawing" width="200"/>
+    <img src="visualizations/med_dst.png" alt="drawing" width="200"/>
+    <img src="visualizations/med_rev.png" alt="drawing" width="200"/>
 </div>
 
-На штрих-коде попроще:
+На qr-коде среднего разрешения:
 
 <div class='container'>
-    <img src="visualizations/stats1.png" alt="drawing" width="400"/>
+    <img src="visualizations/big_stats.png" alt="drawing" width="600"/>
 </div>
 
 Пример сильного искажения:
 
 <div class='container'>
-    <img src="visualizations/1.png" alt="drawing" width="200"/>
-    <img src="visualizations/def1.png" alt="drawing" width="200"/>
-    <img src="visualizations/rev1.png" alt="drawing" width="200"/>
+    <img src="synthetics/qr1.png" alt="drawing" width="200"/>
+    <img src="visualizations/big_dst.png" alt="drawing" width="200"/>
+    <img src="visualizations/big_rev.png" alt="drawing" width="200"/>
 </div>
 
-Исходя из полученных данных можно сделать вывод, что неадекватные деформации начинаются примерно с 2.0 радиан.
+По моим наблюдениям потеря информации, то есть серьёзные отличия с исходным изображенем начинаются примерно на площади в 15 пикселей. Этот резльутат можно перенести и на коды типа datamatrix. 
 
 ## Искажения из albumentations
 
@@ -88,13 +92,6 @@ python3 main.py images via_project_9Nov2024_20h28m_.json 2
 <div class='container'>
     <img src="visualizations/rotate_input.png" alt="drawing" width="300"/>
     <img src="visualizations/rotate_output.png" alt="drawing" width="300"/>
-</div>
-
-- __ISONoise__: симуляция шума, возникающего при высоких значениях ISO
-
-<div class='container'>
-    <img src="visualizations/iso_noise_input.png" alt="drawing" width="300"/>
-    <img src="visualizations/iso_noise_output.png" alt="drawing" width="300"/>
 </div>
 
 - __GaussNoise__: шум из нормального распределения, применяется отдельно для каждого пикселя и для каждого канала (хотя это можно настроить)
