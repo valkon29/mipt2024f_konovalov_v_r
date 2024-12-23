@@ -132,7 +132,7 @@ def augment(image_path, full_data, output_folder):
     transform = A.Compose([
         A.Perspective(p=0.7, scale=(0.1, 0.3)),
         A.GaussianBlur(p=0.5, blur_limit=(low_limit, blur_limit)),
-        A.RandomBrightnessContrast(p=0.5, brightness_limit=(-0.5, 0.5), contrast_limit=(-0.3, 0.3)),
+        A.RandomBrightnessContrast(p=0.5, brightness_limit=(-0.3, 0.3), contrast_limit=(-0.2, 0.2)),
         A.ISONoise(p=0.3, intensity=(0.1, 0.5)),
         A.GaussNoise(p=0.3, std_range=(0.1, 0.4)),
     ], keypoint_params=A.KeypointParams(format='xy', label_fields=['class_labels'], remove_invisible=False))
