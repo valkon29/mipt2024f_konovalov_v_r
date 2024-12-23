@@ -4,12 +4,16 @@ from os import listdir
 from os.path import isfile, join
 
 import random
+import math
 
 import cv2
 
 import albumentations as A
 from matplotlib import pyplot as plt
 import json
+
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 def get_points(image_dict):
     points = []
@@ -33,13 +37,34 @@ def get_lists(keypoints):
         all_points_y.append(y)
     return all_points_x, all_points_y
 
-def fix_keypoints(keypoints_):
+def fix_keypoints(img, keypoints_, labels_):
     keypoints = []
-    for point in keypoints_:
-        keypoints.append((int(point[0]), int(point[1])))
-    return keypoints
+    labels = []
+    flags = []
+    h, w, _ = img.shape
+    curr = []
+    img_polygon = Polygon([ (0, 0), (0, h), (w, h), (w, 0) ])
 
-def get_regions(initial_regions, keypoints, labels):
+    i = 0
+    for point, label in zip(keypoints_, labels_):
+        i += 1
+        point = (int(point[0]), int(point[1]))
+        curr.append(point)
+
+        if i == len(labels_) or labels_[i] != label:
+            curr_polygon = Polygon(curr)
+            curr = []
+            flags.append(img_polygon.contains(curr_polygon))
+            intersection = img_polygon.intersection(curr_polygon)
+            l = list(intersection.exterior.coords)[1:]
+            for p in l:
+                keypoints.append((int(p[0]), int(p[1])))
+                labels.append(label)
+
+    return keypoints, labels, flags
+
+def get_regions(initial_regions, keypoints, labels, flags):
+    fl_index = 0
     regions = []
     curr_x, curr_y = [], []
     for i in range(len(labels)):
@@ -50,33 +75,67 @@ def get_regions(initial_regions, keypoints, labels):
             old_len = len(curr_dict['shape_attributes']['all_points_x'])
             curr_dict['shape_attributes']['all_points_x'] = curr_x
             curr_dict['shape_attributes']['all_points_y'] = curr_y
-            if len(curr_x) < old_len:
+            if not flags[fl_index]:
                 curr_dict['region_attributes']['code integrity'] = 'invalid'
             regions.append(curr_dict)
             curr_x, curr_y = [], []
+            fl_index += 1
 
     return regions
 
+def dist(p1, p2):
+    return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
+
+def max_diagonal(polygon_list):
+    max_diagonal_length = 0
+
+    for i in range(len(polygon_list)):
+        for j in range(i+1, len(polygon_list)):
+            x1, y1 = polygon_list[i]
+            x2, y2 = polygon_list[j]
+            diagonal_length = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            if diagonal_length > max_diagonal_length:
+                max_diagonal_length = diagonal_length
+
+    return max_diagonal_length
 
 def augment(image_path, full_data, output_folder):
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_name = image_path.split('/')[-1].split('.')[0]
 
-    crop_x = random.uniform(0.4, 1)
-    crop_y = random.uniform(0.4, 1)
+    min_edge = 1e4
+
+    for full_name, file_data_ in full_data['_via_img_metadata'].items():
+        file_data = dict(file_data_)
+        if image_name in full_name:
+            keypoints, labels = get_points(file_data)
+            i = 0
+            curr = []
+            for point, label in zip(keypoints, labels):
+                curr.append(point)
+                i += 1
+                if i == len(labels) or label != labels[i]:
+                    min_edge = min(min_edge, max_diagonal(curr))
+                    curr = []
+            break
+
+    blur_limit = math.floor(min_edge * 0.05)
+    low_limit = blur_limit // 2
+
+    if blur_limit % 2 == 0:
+        blur_limit -= 1
+
+    if low_limit % 2 == 0:
+        low_limit -= 1
 
     transform = A.Compose([
-        # A.ChromaticAberration(p=1, primary_distortion_limit=(0, 0.1), secondary_distortion_limit=(0, 0.1)),
-        # A.ISONoise(p=1, color_shift=(0.5, 1), intensity=(0.3, 0.7)),
-        # A.Perspective(p=1, scale=(0.05, 0.3)),
-        # A.Rotate(p=1, limit=180, crop_border=True),
-        # A.Defocus(p=1, radius=(3, 3)),
-        # A.GaussNoise(p=1, var_limit=(100, 250))
-        # A.RandomCrop(int(image.shape[0] * crop_x), int(image.shape[1] * crop_y), p=1)
-        # A.GaussianBlur(p=1, blur_limit=(5, 11)),
-        A.MotionBlur(blur_limit=(11, 21), p=1)
-    ], keypoint_params=A.KeypointParams(format='xy', label_fields=['class_labels']))
+        A.Perspective(p=0.7, scale=(0.1, 0.3)),
+        A.GaussianBlur(p=0.5, blur_limit=(low_limit, blur_limit)),
+        A.RandomBrightnessContrast(p=0.5, brightness_limit=(-0.5, 0.5), contrast_limit=(-0.3, 0.3)),
+        A.ISONoise(p=0.3, intensity=(0.1, 0.5)),
+        A.GaussNoise(p=0.3, std_range=(0.1, 0.4)),
+    ], keypoint_params=A.KeypointParams(format='xy', label_fields=['class_labels'], remove_invisible=False))
 
     for full_name, file_data_ in full_data['_via_img_metadata'].items():
         file_data = dict(file_data_)
@@ -85,10 +144,10 @@ def augment(image_path, full_data, output_folder):
 
             transformed = transform(image=image, keypoints=keypoints, class_labels=labels)
             transformed_image = transformed['image']
-            transformed_keypoints = fix_keypoints(transformed['keypoints'])
-            transformed_labels = transformed['class_labels']
 
-            file_data['regions'] = get_regions(file_data['regions'], transformed_keypoints, transformed_labels)
+            transformed_keypoints, transformed_labels, flags = fix_keypoints(transformed_image, transformed['keypoints'], transformed['class_labels'])
+
+            file_data['regions'] = get_regions(file_data['regions'], transformed_keypoints, transformed_labels, flags)
 
             transformed_image_name = image_name.split('.')[-1] + '_' + str(random.randint(1, 10 ** 5)) + '.jpg'
             file_data['filename'] = transformed_image_name
